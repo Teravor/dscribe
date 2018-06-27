@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import math
 import numpy as np
+from collections import OrderedDict
 from scipy.special import erf
 from scipy.sparse import lil_matrix
 from describe.descriptors import Descriptor
@@ -20,6 +21,9 @@ class ElementalDistribution(Descriptor):
 
     Discrete distributions are assumed to be integer values, and you only need
     to specify the values.
+
+    In the returned vector the properties are sorted alphabetically by the
+    property name.
     """
     def __init__(
             self,
@@ -56,6 +60,7 @@ class ElementalDistribution(Descriptor):
         """
 
         # Check that the given properties are valid
+        properties = OrderedDict(sorted(properties.items(), key=lambda x: x[0]))
         for prop_name, prop_grid in properties.items():
             dist_type = prop_grid.get("type")
             valid_dist_types = set(["continuous", "discrete"])

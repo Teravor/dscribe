@@ -14,6 +14,7 @@ from describe.descriptors import SortedCoulombMatrix
 from describe.descriptors import SineMatrix
 from describe.descriptors import SortedSineMatrix
 from describe.descriptors import ElementalDistribution
+from describe.descriptors import Orbital
 from describe.core import System
 from describe.data.element_data import numbers_to_symbols
 
@@ -21,7 +22,10 @@ import matplotlib.pyplot as mpl
 
 from ase import Atoms
 from ase.lattice.cubic import SimpleCubicFactory
+from ase.visualize import view
 import ase.build
+
+from scipy.signal import find_peaks_cwt
 
 H2O = System(
     cell=[[5.0, 0.0, 0.0], [0.0, 5.0, 0.0], [0.0, 0.0, 5.0]],
@@ -857,7 +861,6 @@ class ElementalDistributionTests(unittest.TestCase):
         x = elemdist.get_axis("first_property")
 
         # Test that the peak positions match
-        from scipy.signal import find_peaks_cwt
         peak_indices = find_peaks_cwt(y, [std])
         peak_loc = x[peak_indices]
 
@@ -935,14 +938,188 @@ class ElementalDistributionTests(unittest.TestCase):
         )
 
         # Features
-        x = elemdist.describe(system)
-        x_dense = x.todense().A1
-        axis = np.arange(len(x_dense))
+        y = elemdist.describe(system)
+        y = y.todense().A1
+        x = range(len(y))
 
-        # print(axis.shape)
-        # print(x_dense.shape)
-        # mpl.plot(axis, x_dense)
+        mpl.plot(x, y)
+        mpl.show()
+
+
+class OrbitalTests(unittest.TestCase):
+    """Tests for the Orbital-descriptor.
+    """
+    # def test_finite_k2(self):
+        # # Tested on a water molecule
+        # system = ase.build.molecule("H2O")
+        # # view(system)
+
+        # # Descriptor setup
+        # n = 100
+        # std = 0.1
+        # rate = 0.5
+        # orbital = Orbital(
+            # atomic_numbers=[1, 8],
+            # k=[2],
+            # grid={
+                # "k2": {
+                    # "min": 0,
+                    # "max": 2,
+                    # "sigma": std,
+                    # "n": n,
+                # }
+            # },
+            # weighting={
+                # "k2": {
+                    # # "function": lambda x: np.exp(-rate*x),
+                    # "function": lambda x: x**(-2),
+                    # "threshold": 1e-2
+                # },
+            # },
+            # periodic=False,
+            # flatten=False
+        # )
+
+        # # Number of features
+        # n_features = orbital.get_number_of_features()
+        # self.assertEqual(n_features, 19*(19+1)/2*n)
+
+        # # Features
+        # y = orbital.create(system)
+        # x = orbital.get_axis(2)
+
+        # # Visual inspection
+        # s1s1 = y[0][0, 0, :]
+        # mpl.plot(x, s1s1)
         # mpl.show()
+
+        # Test that the peak positions match
+        # orbitals = [0, 1, 3]
+        # pos = system.get_positions()
+        # opos = pos[0]
+        # h1pos = pos[1]
+        # h2pos = pos[2]
+        # oh_d = np.linalg.norm(opos - h1pos)
+        # hh_d = np.linalg.norm(h1pos - h2pos)
+        # for i in orbitals:
+            # for j in orbitals:
+
+                # orbital_orbital = y[0][i, j, :]
+                # peak_indices = find_peaks_cwt(orbital_orbital, [std])
+
+                # # There should be two peaks in the 1s-1s pair:
+                # # hydrogen-hydrogen and hydrogen-oxygen.
+                # if i == 0 and j == 0:
+                    # peaks = [1/hh_d, 1/oh_d]
+                    # peak_loc = x[peak_indices]
+                    # self.assertTrue(np.allclose(peaks, peak_loc, rtol=0, atol=0.05))
+
+                # # There should be one peak in the 1s-2s pair:
+                # # hydrogen-oxygen
+                # elif i == 0 and 2 == 0:
+                    # peaks = [1/oh_d]
+                    # peak_loc = x[peak_indices]
+                    # self.assertTrue(np.allclose(peaks, peak_loc, rtol=0, atol=0.05))
+
+    # def test_periodic_k2(self):
+        # # Tested on a water molecule
+        # a = 1
+        # system = Atoms(
+            # cell=[a, a, a],
+            # positions=[[0, 0, 0]],
+            # symbols=["H"],
+            # pbc=True,
+        # )
+        # # view(system)
+
+        # # Descriptor setup
+        # n = 100
+        # std = 0.02
+        # rate = 2
+        # orbital = Orbital(
+            # atomic_numbers=[1],
+            # k=[2],
+            # grid={
+                # "k2": {
+                    # "min": 0,
+                    # "max": 2,
+                    # "sigma": std,
+                    # "n": n,
+                # }
+            # },
+            # weighting={
+                # "k2": {
+                    # "function": lambda x: np.exp(-rate*x),
+                    # "threshold": 1e-2
+                # },
+            # },
+            # periodic=True,
+            # flatten=False
+        # )
+
+        # # Number of features
+        # n_features = orbital.get_number_of_features()
+        # self.assertEqual(n_features, 19*(19+1)/2*n)
+
+        # # Features
+        # y = orbital.create(system)
+        # x = orbital.get_axis(2)
+        # s1s1 = y[0][0, 0, :]
+        # mpl.plot(x, s1s1)
+        # # mpl.show()
+
+        # # Test that the peak positions match
+        # peak_indices = find_peaks_cwt(s1s1, [1, 2, 3])
+
+        # # There should be four peaks visible
+        # peaks = sorted(1/np.array([a, a*np.sqrt(2), a*np.sqrt(3), 2*a]))
+        # peak_loc = sorted(x[peak_indices])
+        # self.assertTrue(np.allclose(peaks, peak_loc, rtol=0, atol=0.05))
+
+    def test_flattened(self):
+        from ase.build import bulk
+        system = bulk('Cu', 'fcc', a=3.6)
+
+        # Descriptor setup
+        n = 100
+        std = 0.01
+        rate = 0.5
+        orbital = Orbital(
+            atomic_numbers=[29],
+            k=[2],
+            grid={
+                "k2": {
+                    "min": 0,
+                    "max": 0.5,
+                    "sigma": std,
+                    "n": n,
+                }
+            },
+            weighting={
+                "k2": {
+                    "function": lambda x: np.exp(-rate*x),
+                    # "function": lambda x: 1/(4*np.pi*x**(2)),
+                    "threshold": 1e-2
+                },
+            },
+            periodic=True,
+            flatten=True
+        )
+
+        # Number of features
+        n_features = orbital.get_number_of_features()
+        self.assertEqual(n_features, 19*(19+1)/2*n)
+
+        # Features
+        y = orbital.create(system)
+        y = y.todense().A1
+        x = range(len(y))
+
+        mpl.plot(x, y)
+        mpl.show()
+        s1s1 = y[0][0, 0, :]
+        mpl.plot(x, s1s1)
+        mpl.show()
 
 
 if __name__ == '__main__':
@@ -955,7 +1132,8 @@ if __name__ == '__main__':
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(SortedCoulombMatrixTests))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(SineMatrixTests))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(SortedSineMatrixTests))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(ElementalDistributionTests))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(ElementalDistributionTests))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(OrbitalTests))
     alltests = unittest.TestSuite(suites)
     result = unittest.TextTestRunner(verbosity=0).run(alltests)
 
