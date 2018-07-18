@@ -1,17 +1,34 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import (bytes, str, open, super, range, zip, round, input, int, pow, object)
 
 import unittest
 import sys
 
 # Import the test modules
+import generaltests
 import coulombmatrix
+import ewaldmatrix
+import sinematrix
+import acsf
+import mbtr
+import lmbtr
+import soap
+import elementaldistribution
 
 # Initialize the test suite
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()
 
 # Add tests to the test suite
+suite.addTests(loader.loadTestsFromModule(generaltests))
 suite.addTests(loader.loadTestsFromModule(coulombmatrix))
+suite.addTests(loader.loadTestsFromModule(ewaldmatrix))
+suite.addTests(loader.loadTestsFromModule(sinematrix))
+suite.addTests(loader.loadTestsFromModule(acsf))
+suite.addTests(loader.loadTestsFromModule(mbtr))
+suite.addTests(loader.loadTestsFromModule(lmbtr))
+suite.addTests(loader.loadTestsFromModule(soap))
+suite.addTests(loader.loadTestsFromModule(elementaldistribution))
 
 # Initialize a runner, pass it the suite and run it
 runner = unittest.TextTestRunner(verbosity=3)

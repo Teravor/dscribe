@@ -1,5 +1,6 @@
-from __future__ import absolute_import, division, print_function
-from builtins import super
+from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import (bytes, str, open, super, range,
+                      zip, round, input, int, pow, object)
 
 import numpy as np
 
@@ -24,14 +25,14 @@ class CoulombMatrix(MatrixDescriptor):
     For reference, see:
         "Fast and Accurate Modeling of Molecular Atomization Energies with
         Machine Learning", Matthias Rupp, Alexandre Tkatchenko, Klaus-Robert
-        Müller, and O.  Anatole von Lilienfeld, Phys. Rev. Lett, (2012),
+        Mueller, and O.  Anatole von Lilienfeld, Phys. Rev. Lett, (2012),
         https://doi.org/10.1103/PhysRevLett.108.058301
     and
         "Learning Invariant Representations of Molecules for Atomization Energy
-        Prediction", Grégoire Montavon et. al, Advances in Neural Information
+        Prediction", Gregoire Montavon et. al, Advances in Neural Information
         Processing Systems 25 (NIPS 2012)
     """
-    def __init__(self, n_atoms_max, permutation="sorted_l2", flatten=True):
+    def __init__(self, n_atoms_max, permutation="sorted_l2", sigma=None, flatten=True):
         """
         Args:
             n_atoms_max (int): The maximum nuber of atoms that any of the
@@ -44,42 +45,14 @@ class CoulombMatrix(MatrixDescriptor):
                     - eigenspectrum: Only the eigenvalues are returned sorted
                       by their absolute value in descending order.
                     - random: ?
+            sigma (float): Width of gaussian distributed noise determining how much the
+                rows and columns of the randomly sorted coulomb matrix are scrambled.
             flatten (bool): Whether the output of create() should be flattened
                 to a 1D array.
         """
-        super().__init__(n_atoms_max, permutation, flatten)
+        super().__init__(n_atoms_max, permutation, sigma, flatten)
 
-    def describe(self, system):
-        """
-        Args:
-            system (System): Input system.
-
-        Returns:
-            ndarray: The zero padded Coulomb matrix either as a 2D array or as
-                a 1D array depending on the setting self.flatten.
-        """
-        cmat = self.coulomb_matrix(system)
-
-        # Handle the permutation option
-        if self.permutation == "none":
-            pass
-        elif self.permutation == "sorted_l2":
-            cmat = self.sort(cmat)
-        elif self.permutation == "eigenspectrum":
-            cmat = self.get_eigenspectrum(cmat)
-        else:
-            raise ValueError("Invalid permutation method: {}".format(self.permutation))
-
-        # Add zero padding
-        cmat = self.zero_pad(cmat)
-
-        # Flatten the matrix if requested
-        if self.flatten:
-            cmat = cmat.flatten()
-
-        return cmat
-
-    def coulomb_matrix(self, system):
+    def get_matrix(self, system):
         """Creates the Coulomb matrix for the given system.
         """
         # Calculate offdiagonals
