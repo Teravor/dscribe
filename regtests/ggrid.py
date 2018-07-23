@@ -10,7 +10,7 @@ from describe.descriptors import GGrid
 
 import ase.build
 from ase import Atoms
-# from ase.visualize import view
+from ase.visualize import view
 import ase.data
 
 
@@ -38,43 +38,43 @@ system = ase.build.bulk(
 
 class GGridTests(unittest.TestCase):
 
-    def test_constructor(self):
-        """Tests different valid and invalid constructor values.
-        """
+    # def test_constructor(self):
+        # """Tests different valid and invalid constructor values.
+        # """
 
-    def test_number_of_features(self):
-        """Tests that the reported number of features is correct.
-        """
-        desc = GGrid(
-            a=5,
-            n=10,
-            channels=[{"Na": {"amplitude": 1, "std": 1}, "Cl": {"amplitude": 1, "std": 1}}],
-            threshold=1e-2,
-            flatten=False,
-        )
-        n_features = desc.get_number_of_features()
-        self.assertEqual(n_features, 1*10**3)
+    # def test_number_of_features(self):
+        # """Tests that the reported number of features is correct.
+        # """
+        # desc = GGrid(
+            # a=5,
+            # n=10,
+            # channels=[{"Na": {"amplitude": 1, "std": 1}, "Cl": {"amplitude": 1, "std": 1}}],
+            # threshold=1e-2,
+            # flatten=False,
+        # )
+        # n_features = desc.get_number_of_features()
+        # self.assertEqual(n_features, 1*10**3)
 
-    def test_visual(self):
-        """Tests that the reported number of features is correct.
-        """
+    # def test_visual(self):
+        # """Tests that the reported number of features is correct.
+        # """
 
-        elements = ["Na", "Cl", "H", "O"]
-        stds = {x: ase.data.covalent_radii[ase.data.atomic_numbers[x]]/2 for x in elements}
-        amplitudes = {x: stds[x]*np.sqrt(2*np.pi) for x in elements}
-        channels = [{x: {"amplitude": amplitudes[x], "std": stds[x]} for x in elements}]
+        # elements = ["Na", "Cl", "H", "O"]
+        # stds = {x: ase.data.covalent_radii[ase.data.atomic_numbers[x]]/2 for x in elements}
+        # amplitudes = {x: stds[x]*np.sqrt(2*np.pi) for x in elements}
+        # channels = [{x: {"amplitude": amplitudes[x], "std": stds[x]} for x in elements}]
 
-        a = 10
-        desc = GGrid(
-            a=a,
-            n=40,
-            channels=channels,
-            threshold=1e-2,
-            flatten=False,
-            periodic=True,
-        )
+        # a = 10
+        # desc = GGrid(
+            # a=a,
+            # n=40,
+            # channels=channels,
+            # threshold=1e-2,
+            # flatten=False,
+            # periodic=True,
+        # )
 
-        res = desc.create(system, offset=np.array((a/2, a/2, a/2)))
+        # res = desc.create(system, offset=np.array((a/2, a/2, a/2)))
         # print(res.shape)
 
         # a = 10
@@ -112,12 +112,106 @@ class GGridTests(unittest.TestCase):
 
         # Visualize as 2D slice
         # from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as mpl
-        mpl.matshow(res[0, :, :, 19], cmap=mpl.cm.gray)
-        # plt.clim(0, 0.5)
-        mpl.colorbar()
-        mpl.show()
+        # import matplotlib.pyplot as mpl
+        # mpl.matshow(res[0, :, :, 19], cmap=mpl.cm.gray)
+        # # plt.clim(0, 0.5)
+        # mpl.colorbar()
+        # mpl.show()
 
+    # def test_coulomb(self):
+        # elements = ["Na", "Cl", "H", "O"]
+        # stds = {x: ase.data.covalent_radii[ase.data.atomic_numbers[x]]/2 for x in elements}
+        # amplitudes = {x: ase.data.atomic_numbers[x] for x in elements}
+        # channels = [{x: {"amplitude": amplitudes[x], "std": stds[x]} for x in elements}]
+
+        # a = 10
+        # desc = GGrid(
+            # a=a,
+            # n=40,
+            # channels=channels,
+            # mode="coulomb",
+            # threshold=1.5,
+            # flatten=False,
+            # periodic=True,
+        # )
+
+        # res = desc.create(system)
+        # view(system)
+        # print(res.shape)
+        # print(res.max())
+        # print(res.min())
+
+        # # Visualize as plotly isosurface
+        # from skimage import measure
+        # from plotly.offline import download_plotlyjs, plot
+        # import plotly.plotly as py
+        # import plotly.graph_objs as go
+        # import plotly.figure_factory as ff
+        # verts, faces, _, _ = measure.marching_cubes_lewiner(res[0, :, :, :], 1700, spacing=(0.25, 0.25, 0.25))
+
+        # # Plotly isosurface
+        # x, y, z = zip(*verts)
+        # colormap = ['rgb(255,105,180)', 'rgb(255,255,51)', 'rgb(0,191,255)']
+        # fig = ff.create_trisurf(x=x,
+                                # y=y,
+                                # z=z,
+                                # plot_edges=False,
+                                # colormap=colormap,
+                                # simplices=faces,
+                                # title="Isosurface")
+        # plot(fig)
+
+    def test_sphere(self):
+        elements = ["Na", "Cl", "H", "O"]
+        stds = {x: ase.data.covalent_radii[ase.data.atomic_numbers[x]]/2 for x in elements}
+        amplitudes = {x: ase.data.atomic_numbers[x] for x in elements}
+        channels = [{x: {"amplitude": amplitudes[x], "std": stds[x]} for x in elements}]
+
+        a = 10
+        desc = GGrid(
+            a=a,
+            n=40,
+            channels=channels,
+            mode="sphere",
+            threshold=1.5,
+            flatten=False,
+            periodic=True,
+        )
+
+        res = desc.create(system)
+        view(system)
+        print(res.shape)
+        print(res.max())
+        print(res.min())
+
+        # Visualize as plotly isosurface
+        from skimage import measure
+        from plotly.offline import download_plotlyjs, plot
+        import plotly.plotly as py
+        import plotly.graph_objs as go
+        import plotly.figure_factory as ff
+        verts, faces, _, _ = measure.marching_cubes_lewiner(res[0, :, :, :], 11, spacing=(0.2, 0.2, 0.2))
+
+        # Plotly isosurface
+        x, y, z = zip(*verts)
+        colormap = ['rgb(255,105,180)', 'rgb(255,255,51)', 'rgb(0,191,255)']
+        fig = ff.create_trisurf(x=x,
+                                y=y,
+                                z=z,
+                                plot_edges=False,
+                                colormap=colormap,
+                                simplices=faces,
+                                title="Isosurface")
+        plot(fig)
+
+        # Visualize as 2D slice
+        # from mpl_toolits.mplot3d import Axes3D
+        # import matplotlib.pyplot as mpl
+        # for i in range(15):
+            # mpl.matshow(res[0, :, :, i], cmap=mpl.cm.gray)
+            # # plt.clim(0, 0.5)
+            # mpl.colorbar()
+            # mpl.show()
 
     # def test_flatten(self):
         # """Tests the flattening.

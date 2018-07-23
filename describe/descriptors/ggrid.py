@@ -11,7 +11,7 @@ from describe.descriptors.descriptor import Descriptor
 
 
 class GGrid(Descriptor):
-    def __init__(self, a, n, channels, threshold, flatten=False, periodic=True):
+    def __init__(self, a, n, channels, mode, threshold, flatten=False, periodic=True):
         """
         Args:
             a (float): Lattice constant for the cubic volume.
@@ -21,6 +21,13 @@ class GGrid(Descriptor):
             channels (list of dict): A list containing dictionaries that
                 specify an amplitude and standard deviation for each element.
                 Each dictionary in this list represents a new channel
+            mode: The functional form of the radial distribution set at each
+                atom. Available modes are:
+                    - gaussian: A gaussian distribution with the element
+                      specific amplitude and standard deviation
+                    - coulomb: A Coulomb potential of the form Z/r.
+                    - sphere: A sphere with intensity determined by amplitude
+                        and radius defined by std.
             threshold (float): Determines how remote Gaussians affect the grid
                 results. When the Gaussian has decayed below this value, it is
                 excluded from the grid values.
@@ -32,6 +39,7 @@ class GGrid(Descriptor):
         self.a = a
         self.n = n
         self.channels = channels
+        self.mode = mode
         self.threshold = threshold
         self.periodic = periodic
 
@@ -74,19 +82,31 @@ class GGrid(Descriptor):
         for channel in self.channels:
             for element, params in channel.items():
 
-                # Here we solve the distance at which the gaussian has decayed
-                # to the threshold value
-                amplitude = params["amplitude"]
-                std = params["std"]
+                # Here we solve the distance at which the radial distibution
+                # has decayed to the threshold value
+                if self.mode == "gaussian":
+                    amplitude = params["amplitude"]
+                    std = params["std"]
 
-                # If the term under square root is negative, or the amplitude
-                # is zero, the gaussian is always below the threshold
-                if amplitude != 0:
-                    sqrt_term = -2*np.log((std*np.sqrt(2*np.pi)*self.threshold)/amplitude)
-                    if sqrt_term >= 0:
-                        i_pad = std*np.sqrt(sqrt_term)
-                        if i_pad > max_pad:
-                            max_pad = i_pad
+                    # If the term under square root is negative, or the amplitude
+                    # is zero, the gaussian is always below the threshold
+                    if amplitude != 0:
+                        sqrt_term = -2*np.log((std*np.sqrt(2*np.pi)*self.threshold)/amplitude)
+                        if sqrt_term >= 0:
+                            i_pad = std*np.sqrt(sqrt_term)
+                            if i_pad > max_pad:
+                                max_pad = i_pad
+                elif self.mode == "coulomb":
+                    amplitude = params["amplitude"]
+                    i_pad = amplitude/self.threshold
+                    if i_pad > max_pad:
+                        max_pad = i_pad
+
+                elif self.mode == "coulomb":
+                    i_pad = params["std"]
+                    if i_pad > max_pad:
+                        max_pad = i_pad
+
         # print(max_pad)
 
         # Define the wanted cell that also has approppriate padding
@@ -194,13 +214,39 @@ class GGrid(Descriptor):
         # Evaluate gaussian on each point. The Gaussian is normalized so that it
         # reaches 1 at the maximum.
 
-        # Broadcast standard deviations and amplitude to fit the grid
-        stds = stds[:, None, None, None]
-        amplitudes = amplitudes[:, None, None, None]
+        if self.mode == "gaussian":
 
-        gaussians = 1/(stds*np.sqrt(2*np.pi))*amplitudes*np.exp(-distances**2 / (2 * stds**2))
+            # Broadcast standard deviations and amplitude to fit the grid
+            stds = stds[:, None, None, None]
+            amplitudes = amplitudes[:, None, None, None]
 
-        # Sum gaussians
-        sums = np.sum(gaussians, axis=0)
+            gaussians = 1/(stds*np.sqrt(2*np.pi))*amplitudes*np.exp(-distances**2 / (2 * stds**2))
+
+            # Sum gaussians
+            sums = np.sum(gaussians, axis=0)
+
+        elif self.mode == "coulomb":
+            amplitudes = amplitudes[:, None, None, None]
+            coulombs = amplitudes/distances
+
+            # Restrict the maximum value
+            np.clip(coulombs, a_min=None, a_max=200, out=coulombs)
+
+            # Sum Coulomb potentials
+            sums = np.sum(coulombs, axis=0)
+
+        elif self.mode == "sphere":
+
+            # Find out a mask for distances within the sphere
+            sphere_mask = distances < stds[:, None, None, None]
+
+            # Set the amplitude separately for each atom
+            for i_atom in range(centers.shape[0]):
+                i_zeros = np.zeros((distances.shape[1:]))
+                i_zeros[sphere_mask[i_atom, :, :, :]] = amplitudes[i_atom]
+                distances[i_atom, :, :, :] = i_zeros
+
+            # Sum spheres
+            sums = np.sum(distances, axis=0)
 
         return sums
