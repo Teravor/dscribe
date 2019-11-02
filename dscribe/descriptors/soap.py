@@ -298,10 +298,17 @@ class SOAP(Descriptor):
 
         # Create the extended system if periodicity is requested
         if self.periodic:
-            # The radial cutoff is determined by the rcut + the gaussian width that
-            # extends the influence of atoms. We consider that three sigmas is
-            # enough to make the gaussian decay.
-            radial_cutoff = self._rcut+3*self._sigma
+            # For polynomial basis, calculate where the unnormalized gaussians
+            # decay to a very small threshold value. Use that distance to pad
+            # the rcut when extending the system.
+            threshold = 0.00001
+            pad = self._sigma*np.sqrt(-2*np.log(threshold))
+
+            # Old
+            # pad = 3*self._sigma
+            # pad = 5
+
+            radial_cutoff = self._rcut+pad
             system = get_extended_system(system, radial_cutoff, return_cell_indices=False)
 
         # Determine the SOAPLite function to call based on periodicity and

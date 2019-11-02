@@ -116,6 +116,7 @@ def get_extended_system(system, radial_cutoff, centers=None, return_cell_indices
     # direction. We take as many copies as needed to reach the radial cutoff.
     # Notice that we need to use vectors that are perpendicular to the cell
     # vectors to ensure that the correct atoms are included for non-cubic cells.
+
     cell = np.array(system.get_cell())
     a1, a2, a3 = cell[0], cell[1], cell[2]
     b1 = np.cross(a2, a3, axis=0)
@@ -130,6 +131,23 @@ def get_extended_system(system, radial_cutoff, centers=None, return_cell_indices
     ny = int(cell_images[1])
     nz = int(cell_images[2])
     n_copies_axis = np.array([nx, ny, nz], dtype=int)
+    # print(radial_cutoff)
+    # print(cell)
+    # print(n_copies_axis)
+
+    # The number of neighboring images to search in each direction is
+    # equal to the ceiling of the cutoff distance (defined above) divided
+    # by the length of the projection of the lattice vector onto its
+    # corresponding surface normal. a's surface normal vector is e.g.
+    # b x c / (|b| |c|), so this projection is (a . (b x c)) / (|b| |c|).
+    # The numerator is just the lattice volume, so this can be simplified
+    # to V / (|b| |c|). This is rewritten as V |a| / (|a| |b| |c|)
+    # for vectorization purposes.
+    # latt_len = np.sqrt((cell**2).sum(1))
+    # V = abs(np.linalg.det(cell))
+    # n_copies_axis = np.array(np.ceil(radial_cutoff * np.prod(latt_len) /
+                               # (V * latt_len)), dtype=int)
+    # nx, ny, nz = n_copies_axis[0], n_copies_axis[1], n_copies_axis[2],
 
     # If no centers are given, and the cell indices are not requested, simply
     # return the multiplied system. This is much faster.
@@ -154,6 +172,8 @@ def get_extended_system(system, radial_cutoff, centers=None, return_cell_indices
             symbols=ext_symbols,
         )
 
+        # from ase.visualize import view
+        # view(extended_system)
         return extended_system
 
     # If centers are given and/or cell indices are needed, the process is done
