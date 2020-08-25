@@ -14,4 +14,5 @@ Tutorials
    soap
    mbtr
    lmbtr
+   turbosoap
    kernels
