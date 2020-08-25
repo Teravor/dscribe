@@ -23,3 +23,4 @@ from dscribe.descriptors.sinematrix import SineMatrix
 from dscribe.descriptors.elementaldistribution import ElementalDistribution
 from dscribe.descriptors.matrixdescriptor import MatrixDescriptor
 from dscribe.descriptors.soap import SOAP
+from dscribe.descriptors.turbosoap import TurboSOAP, TurboSOAPSpecie
